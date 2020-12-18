@@ -1,0 +1,682 @@
+# -*- mode: org; coding: utf-8 -*-
+#+STARTUP: overview
+
+* Foreword
+~systemCrasHelp~ is my "org-y companion" when system d-day happened.
+
+* First Aid
+
+First -- make sure all other methods have failed.
+
+** Get a bootable stick
+Start the old lady (T61) and make her a gift (the ~ISO~ of the latest ~manjaro
+i3~). Use ~etcher~ (T61) to flash a stick and hands on your mistress (T470).
+Boot'n'follow instructions.
+
+* Download Part
+
+Alright. A running system.
+
+** ~pacman~ my necessary
+Before downloading, I rank my mirrors and update all packages.
+
+#+begin_src sh
+ sudo su
+ pacman-mirrors --fasttrack 5 && sudo pacman -Syyu
+ exit
+ #+end_src
+
+ Necessary packages documentation:
+
+| arc-gtk-theme           | Symbol'n'Application Theme                       |
+| aspell-de, aspell-en    | Aspell libraries                                 |
+| emacs                   | Editor of choice                                 |
+| gcc-fortran             | Learn system to interpret parts of R source code |
+| texlive-most            | Document preparation system                      |
+| mplayer                 | Music player                                     |
+| openjfx                 | Get Java                                         |
+| r                       | Statistical software                             |
+| sdcv                    | Stardict command line interface                  |
+| unclutter               | Mouse transparency                               |
+| zsh                     | Z-Shell                                          |
+| zsh-syntax-highlighting | Fish-like syntax highlighting                    |
+
+#+begin_src
+pacman -Syu arc-gtk-theme aspell-de aspell-en emacs gcc-fortan java-openjfx mplayer r texlive-most zsh zsh-syntax-higlighting
+#+end_src
+
+
+** Access To AUR
+Grant access to AUR package repositories -- make ~yay~ work.
+
+Hint: ~-i~ to install, ~-s~ to synch deps [i.e. install missing dependencies]).
+
+#+begin_src sh
+ cd ~ && git clone https://aur.archlinux.org/yay.git
+ cd yay && makepkg -si
+ #+end_src
+
+ Hint: ~yay~ it's kind of the new ~yaourt~
+
+** ~yay~ Other Necessary Packages
+
+Now it's time to ~yay~ the other necessary packages 'n' update
+
+ #+begin_src sh
+ yay -Syu intel-advisor mu nextcloud-client openblas-lapack wordnet-cli
+ #+end_src
+
+ More necessary packages documentation:
+
+| nextcloud-client | Nextcloud gui                                      |
+| openblas-lapack  | Multi-core support for R                           |
+| intel-advisor    | Top R performance with C(++) and Fortran compilers |
+| mu               | Command line tool for searchin mails               |
+| wordnet-cli      | Wordnet command line interface                     |
+
+** (git) Repositories
+
+Time to clone my repos. But first make sure git is ready.
+
+#+begin_src
+git clone https://github.com/bissantz/systemCrash.git && \\
+git clone https://github.com/bissantz/dotfiles.git && \\
+git clone https://github.com/bissantz/bissantz.github.io
+#+end_src
+
+Hint: If there is no i3/config in your /home there is a good chance it might be
+at .config/i3/config.
+
+* Configuration Part
+
+** The "Superuser Do Gang"
+Good advice from [[https://phoenixnap.com/kb/how-to-create-add-sudo-user-centos][phoenixnap]]. What I did to become member of the "sudo gang":
+
+#+begin_src sh
+sudo visudo
+#+end_src
+
+~steven~ get the same privileges as root. Press ~j~ to navigate to the line.
+Press ~i~ to insert:
+
+#+begin_src sh
+steven ALL=(ALL) ALL
+#+end_src
+
+** R
+
+The R package is already installed with the ~pacman~ section. Most questions are answered in the [[https://wiki.archlinux.org/index.php/R][Arch Wiki]]. What else?
+
+Multicore support is enabled via ~openblas-lapack~ and possible troublemaker are eliminiated with ~gcc-fortan~. My thanks to [[https://forum.manjaro.org/t/using-the-statistical-package-r-in-manjaro-with-rstudio/484][forum.manjaro.org]].
+
+ Last steps: Satisfy text mining packages with ~rjava~ \dots
+
+ #+begin_src sh
+ export JAVA_LIBS="$JAVA_LIBS -ldl"
+ sudo R CMD javareconf
+ #+end_src
+
+ \dots and pre-fix that some of them might fail due to the ~libicui***~ error. Run in R:
+
+ #+begin_src R
+ install.packages("stringi", repo='https://ftp.fau.de/cran/')
+ #+end_src
+
+ Hint: The ~""~ were necessary in my case. Plus: I had to specify a repo. See: [[https://cran.r-project.org/mirrors.html][R-Mirrors]]. And: If R asks "library specific" question, "yes" is the answer of choice.
+
+ Tipp: In some cases the R package ~installr~ makes things easier.
+
+*** Further Increase in Performance
+ Installed the ~intel-advisor~ package in the ~yay~ section. So I'll get top application performace with C(++) and Fortran compilers, libraries and analysis tools.
+
+ Hint: I did not install the ~intel-mkl~ package (mentioned in the [[https://wiki.archlinux.org/index.php/R][Arch Wiki]])
+ because I didn't really understand the potential problems discussed at the  [[https://blog.revolutionanalytics.com/2015/10/edge-cases-in-using-the-intel-mkl-and-parallel-programming.html][revolutionanalytics]] blog.
+
+*** RStudio
+ I thought emacs to speak statistics ([[https://ess.r-project.org/][ESS]]). But if you haven't think about RStudio.
+
+ #+begin_src sh
+ yay -Syu rstudio-desktop-bin
+ #+end_src
+
+** TeX (Live)
+ I usually take ~texlive most~ even if it is an package overload -- filled with
+ packages I'll probably never need.
+
+ Hint: Normally one has to pick and install and editor of choice but I use
+ ~auctex~.
+
+** ~zsh~, ~Oh My Zsh~
+ If I need to "reread" why I should use ~zsh~ instead of ~bash~ -- [[https://sunlightmedia.org/bash-vs-zsh/][here]] is a
+ comparison. Further instructions [[https://www.addictivetips.com/ubuntu-linux-tips/switch-from-bash-to-zsh-on-linux/][here]].
+
+*** install ~zsh~
+First find out about your shell (usually ~bash~) and check if zsh is preinstalled. If not use ~-Syu~ flag. Configure it, check if it is available and make the Z-Shell accessible for ~root~ and ~user~:
+
+#+begin_src sh
+which $SHELL
+zsh
+chsh -l
+sudo -su
+chsh -s /bin/zsh/root
+exit
+chsh -s /bin/zsh/steven
+#+end_src
+
+*** Ricing Zsh (Oh-My-Zsh)
+
+If you copied my repo -- everything should be fine. If get Oh-My-Zsh and configure the ~.zshrc~ with your favorite theme and ~source~ the file to apply changes:
+#+name: Oh-My-Zsh
+#+begin_src sh
+wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh
+snew .zshrc
+source .zshrc
+#+end_src
+Hint: My favorit themes are "minimal", "theunraveler", "norm" or "wezm"
+
+*** Zsh additionals
+I use fish-like syntax highlighting. It should be pre-installed with the ~pacman section~
+
+** ~urxvt~
+ Find out about the terminal emulator you are using. I stick with ~rxvt-unicode~.
+
+ #+name: urxvt
+ #+begin_src sh
+ pacman -Qi rxvt-unicode-terminfo
+ #+end_src
+
+*** i3-sensible-terminal
+i3 comes with ~i3-sensible-terminal~ to detect a working terminal emulator --
+e.g. the preferred one. So if I bind ~i3-senible-terminal~ to ~$mod + Return~ in
+my ~.i3/config~ there should be no other result than executing the terminal
+emulator of choice.
+
+*** urxvt fonts
+What I found exciting, is that after I changed the font to ~monospace~ I didn't
+get any "special symbols" as I tried to ~¢d~ in a git repository. But after
+changing to ~Deja Vu Sans Mono~ I got all my symbols back. So it is kind of
+font-dependent which "extra" symbols you get in a terminal. Keep that in mind if
+you're looking for errors.
+
+** GNU Emacs
+I launch Emacs in Gui because I can.
+
+*** Aspell
+  Getting an interactive spell checker with the Aspell library. Sometimes aspell itself is already installed but with it not the "word lists". So emacs can't check spelling on the fly. Run:
+
+** Kernel Module
+Most kernel modules are dependent on the system kernel I'm actually running. So first I need to check which kernels are installed in my system. I often needed kernel modules with my mistress' battery (~acpi_call~). Luckly ~tlp~ tells me if it needs a special one. So I should check if ~tlp~ it has any special needs. If so -- I'll satisfy them. Run:
+
+ #+begin_src
+ tlp stat
+ mhwd-kernel -li
+ #+end_src
+
+*** ~acpi_call~
+From experience I know that I'll need ~acpi_call~. So I get by following this logic with ~linux414-acpi-call~. On top of that I'll need to install the kernel modul for the second kernel "4.19".
+#+name:
+#+begin_src
+linux414-acpi_call
+linux419-acpi-call
+#+end_src
+
+** Fonts
+
+~font awesome~ is a must have. But there are two ways to get it both leading to different results.
+
+ The main problem: Ugly glyphs. More detailed: ~font awesome 5~ doesn't provide
+ a space character anymore, and pango doesn't fallback to a font that contains a
+ space character. So there is a pango bug. Advice from ([[https://bbs.archlinux.org/viewtopic.php?id=233098][here]]):
+
+ 1. Stay with font awesome 4 (my way)
+     a) downgrade if you still have the cache
+     b) use the AUR package  ttf-font-awesome-4
+ 2. Use font awesome 5, fix your other missing symbols, probably moved to Font Awesome 5 Non-free Part
+      a) use otf-font-awesome
+      b) use ttf-font-awesome and hope pango will fix the bug
+
+*** 1.b) Use the AUR-Package
+This is the opportunity I chose. To realize it simply ~yay~ the font-awesome AUR Package:
+#+name: Font Awesome 4
+#+begin_src sh
+yay ttf-font-awesome-4
+#+end_src
+
+*** 2.b) use ttf-font-awesome and hope pango will fix the bug
+To get it simple download the zip from ~font awesome~ [[https://github.com/FortAwesome/Font-Awesome][github page]] (under "releases"). If there is no ~.fonts~ in my home repo simple create a folder, paste the ~*.ttf~ in and delete the unziped and ziped folders. Starting from home run:
+#+name: Font Awesome 5
+#+begin_src
+mkdir .fonts
+cd /Downloads
+cp ./*.ttf ~/.fonts
+rm -rf ~/Downloads/fontawesome
+#+end_src
+Now you can use the the ~font awesome~ [[https://fontawesome.com/v4.7.0/cheatsheet/][cheatsheet]] (make sure you got the latest one)
+
+** Arc GTK Theme
+ To make my system look consistent I use the Arc GTK Theme. It's pre-installed with the ~pacman~ section and changes can be applied with ~lxappearance~
+
+** Touchpad Settings
+*** IN-PROGRESS Set Touchpad Off on System Start
+    There a a bunch of ways to set the touchpad off by default. For me the possibility to toggle the touchpad back on was significant. Because I couldn't get ~systemd~ going I chose the less attractive "workarround" (the i3 solution)
+
+Read about start skripts
++ https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
++ https://blog.flowblok.id.au/2013-02/shell-startup-scripts.html
+
+**** The 40-libinput.conf Solution
+This solution is made for those who don't want to toggle their touchpad. In fact your disable it globally --  so ~xinput~ can't detect it while searching for "available input devices". If this would be my prefered method, I'd run:
++ ~sudo emacs -nw /usr/share/X11/xorg.conf.d/40-libinput.conf~
+Set ~Option "Ignore" "on"~ at the Touchpad section (above ~EndSetion~) and restart the ~Xserver~ to apply changes.
+
+**** The i3 "Workarround"
+The i3 workaround works for me but is not my prefered method of solving this issue. Following this solution the touchpad will be disabled only at the "i3 start process stage". But because I couldn't make a script work together with the ~.service~ I decided to stick with it -- at least initially. The following line I'd already paste into my ~.i3/config~:
+
++ ~exec --no-startup-id xinput --disable $(xinput --list | grep -i 'touchpad' | grep -o 'id=[0-9]*' | sed 's/id=//')~
+
+**** TODO The ~systemd~ Solution
+I would love to set it off with ~systemd~ but I am not able to make a ~.service~ work together with a script. For sure I'll be. Need only some time to research..
+
+*** Set Touchpad Toggle
+    I do actually not know why, but creating a "touchpad-toggle" always drives me crazy. Okay, let's give it another try (following [[https://era86.github.io/2019/01/17/thinkpad-function-key-mapping-toggle-touchpad-ubuntu-1804.html][this]] instruction). Hint: it works! yaaaay.
+**** Set Touchpad of my excerpt from the linked instructions
+    Make ~acpi_call~ work if it doesn't... Check the status of ~acpid.service~.
+    + ~systemctl status acpid.service~
+    If it is not active enable (creates a symbolic link) and start it:
+    + ~systemctl enable acpid.service~
+    + ~systemctl start acpid.service~
+
+    Search for the hotkey with ~acpi listen~ and press the FN86 Key you actually interessted in (e.g. the beautifule keyboard symbol [F11]: ~ibm/hotkey LEN0268:00 00000080 00001315~)
+    + ~acpi_listen~
+
+ With the "keycode" we are now able to define an ACPI event in ~/etc/acpi/event~ (did save it in my repo). Run:
+ + ~sudo touch /etc/acpi/events/ibm-touchpad~
+ Hint: ~event~ is the name of our desired function-key event. ~action~ is the script we will create now. The script will use ~xinput~ to find the status of the touchpad and toggle it accordingly. For ~xinput~ to work, we need to specify the XAUTHORITY environment-variable in the script:
+ + ~echo $XAUTHORITY~
+ Now create the script-file ~ibm-touchpad.sh~, change ~export XAUTHORITY~ with the appropriate output from ~echo $XAUTHORITY~ and make the script exectuable:
+ + ~touch /etc/acpi/ibm-touchpad.sh~
+ + ~chmod +x /etc/acpi/ibm-touchpad.sh~
+
+ Reboot -- Login -- Mission Complete.
+
+
+** .aliases
+
+Because of the fact that ~bash~ and ~zsh~ are using both the same basic alias syntax I created a /single/ ~.aliases~ and use them for both and link it to ~.bashrc~ and ~.zshrc~ (solution: [[https://askubuntu.com/questions/31216/setting-up-aliases-in-zsh][askubuntu.com]]).
+  I added the following lines in my ~.bashrc~:
+
+  #+begin_src bash
+  if [ -f ~/.aliases ]; then
+      . ~/.aliases
+  fi
+  #+end_src
+
+  and add this shorty to my .zshrc:
+
+  #+begin_src
+  source $HOME/.aliases
+  #+end_src
+
+*** Bad assignment error
+ Shell, it does not like the wastage of “space” so the standard of using spaces before and after the assignment operator (=) is not supported. Remove all extra white spaces before and after "=". ([[https://itsfoss.com/solve-zsh-bad-assignment/][itsfoss.com]])
+
+
+How to bring together all of dotfiles in a dotfile folder. I got help from ([[http://blog.smalleycreative.com/tutorials/using-git-and-github-to-manage-your-dotfiles/][smalleycreative]]). No I am able to manage all my dotfiles with git and github. Code:
+
+#+begin_src bash
+mkdir ~/.dotfiles
+mv ~/.dotfile(s) ~/.dotfiles
+git clone https://github.com/naturklang/.dotfiles.git
+~/.dotfiles/symlink.sh
+#+end_src
+
+*** Start Script for symlink.sh
+Write a little start script to update symlinks every system start. Generel help from the [[https://wiki.archlinux.org/index.php/Systemd][arch]] or [[https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-unit_files][redhat]] wiki.
+
+https://kdecherf.com/tag/offlineimap/
+
+#+name: Create symlinks.service
+#+begin_src sh
+sudo -s
+touch /etc/systemd/system/symlinks.service
+chmod 664 /etc/systemd/system/symlinks.service
+exit
+#+end_src
+
+Hint: If you downloaded the systemCrashHelp repo the .service is in there.
+#+name: Enable'n'Start'n'Check symlinks.service
+#+begin_src sh
+systemctl daemon-reload
+systemctl enable name.service
+systemctl start name.service
+systemctl status name.service
+#+end_src
+
+** Nextcloud
+Get some external storage and with it my data back. I use nextcloud which is already installed (or should be with the [[Patient Transfer][yay configuration part]]). Run the client and configure it with OwnCube:
+
+#+begin_src sh
+ yay -Q nextcloud-client
+ nextcloud-client
+ #+end_src
+
+ Hint: You'll need the server adress. Use: https://cloud.owncube.com -- log in -- finished.
+
+*** OwnCube
+ I moved with bag and baggage to ~OwnCube~. It is compatible with ~nextcloud~ and accessible from [[https://cloud.owncube.com/][here]]. I did stick with my usual username (the one I use on github).
+
+** msmtp
+ To send mails via the providers sercer I use ~msmtp~.
+
+ Configuration takes place at the ~.msmtprc~. ~Touch~ or ~cp~ the example and make it explicitly read- and writable b it's owner ([[https://wiki.archlinux.org/index.php/Msmtp#Issues_with_TLS][archlinux.org]]):
+
+ #+begin_src sh
+ sudo pacman -Syu msmtp
+ chmod 600 ~/.msmtprc
+ #+end_src
+
+ Avoid plain text passwords gmail example:
+
+ #+begin_src sh
+ gpg2 --output ~/dotsecret/.password-store/msmtp-password.gmail.gpg -c
+ #+end_src
+
+ (Re-)Enter master password 2x, enter passwort on the console in plain text, finaly ~Ctrl-D~ for ~gpg2~ encryption. After all add the following to your ~.msmtprc~ instead of the "usual" password:
+
+ #+begin_src sh
+ passwordeval gpg2 --no-tty -q -d ~/dotsecret/.password-store/msmtp-password.gmail.gpg
+ #+end_src
+
+ Hint: This snippet of code will not add an entry in your .zsh_history (same with .bash_history)
+
+** Password Management
+
+ Most important: do not save your password in plain text files. Need help? Get by with a little help from the [[https://wiki.archlinux.org/index.php/Mutt][arch-wiki]] or have look at what I did.
+ Hint: I'll do it (even the init of the encrypted files) with ~pass~. If you want to encrypt files your own way and need help [[https://www.cyberciti.biz/tips/linux-how-to-encrypt-and-decrypt-files-with-a-password.html][cyberciti]] will.
+
+*** GnuPG
+ Pass requires GnuPG. So let's start with it: Password management with GnuPG ([[https://www.php.net/manual/en/book.gnupg.php][manual]]). Check if it is pre-installed (should be) and create a key pair ([[https://www.techrepublic.com/article/how-to-work-with-pgp-keys-using-gnupg/][help]]) as well as an revocation certificate ([[https://wiki.archlinux.org/index.php/GnuPG][more help]]). Minimize file permissions of the certificate and store it away.
+
+  #+begin_src sh
+  sudo pacman -Q gnupg
+  gpg --full-gen-key
+  gpg --gen-revoke --armor --output=revocation_certificate.asc uid
+  chmod -600 ~/revocation_certificate.asc
+  #+end_src
+
+  Hint: I did store it on an usb stick and printed it. If you want to delete your revocation certificate afterwords make sure there is nothing left in you ~.gnupg~ dir.
+
+  [[https://wiki.archlinux.org/index.php/GnuPG#gpg-agent][Arch Wiki Warnings]]: (1) Anybody having access to your revocation certificate can revoke your key, rendering it useless. (2) Key revocation should only be performed if your key is compromised or lost, or you forget your passphrase.
+
+*** Gnu PG Agent
+ If you use external tools like msmtp, you need to set up an agent (e.g. gpg-agent, see GnuPG#gpg-agent) to keep the passphrase into cache and thus avoiding those tools always prompting for it. In my case gpg-agent it is running by default.
+
+*** Password Manager
+ I use the standarad unix password manager ([[https://www.passwordstore.org][pass website]]) with [[https://gnupg.org/][gnupg]] (required but usually allready part of your system). Looking for good guide to dive into? [[https://www.thepolyglotdeveloper.com/2018/12/manage-passwords-gpg-command-line-pass/][the polyglot developer]] has one for you -- [[https://medium.com/@chasinglogic/the-definitive-guide-to-password-store-c337a8f023a1][cashinglogic]] as well. What I did:
+
+ #+begin_src sh
+ sudo pacman -Syu pass
+ pacman -Q gnupg
+ gpg2 --full-gen-key+
+ #+end_src
+
+ Most important: Initialization with your public key.
+
+ #+begin_src sh
+ gpg --list-keys
+ pass init "pub (=publickey-ID)"
+ #+end_src
+
+ Not get git power!
+
+ #+begin_src sh
+ pass git init
+ #+end_src
+
+ To generate or insert and existing password in a file ~gmail~ in a directory called ~mail~ run. Check if everything's set up correctly:
+
+ #+begin_src sh
+ pass insert /mail/gmail
+
+ pass generate /mail/gmail
+ pass show /mail/gmail
+ #+end_src
+
+ Essential Hint: For security reasons export your secret key, put it away and never nerver ever make it public. Same with revocation certificate. First thing you can do is no permission for any expect the system administratior (~000~) or the author (~600~):
+
+ #+begin_src
+ gpg --gen-revoke --armor --output=revocation_certificate.asc steven.bissantz@mail.de
+ gpg --output secret.key --armor --export-secret-keys steven.bissantz@mail.de
+ chmod 600 revocation_certificate.asc secret.key
+ #+end_src
+
+ Other way round with the public key:
+ #+begin_src sh
+ gpg --output public.key --armor --export steven.bissantz@mail.de
+ #+end_src
+
+*** Set $var as password
+ Either if you create a password.file in /tmp and encryp it with pass or gnupg or did it in one step, e.g. with the --output flag, you can assign variables to call your password. The ~imap_pass~ example:
+
+ Encrypt the following file with it's input and save it. For example at ~/home/steven/.password-store/mail/gmail.gpg~:
+
+ #+begin_src sh
+ set my_gmail_pass = "gmail_password"
+ #+end_src
+
+ Now you specify the source the encrypted file, decrpt it (-d) and call the assigned variables "my_pass" (-q). Then we call the variable in the same file.
+ Hint: Actually the source of the file is the path where we saved it:
+
+ #+begin_src sh
+ # decrpyt our "password variable" and create the variable
+ source "gpg -dq $HOME/.password-store/mail/gmail.gpg"
+ # call the encrypted "password variable"
+ set imap_pass=$my_gmail_pass
+ #+end_src
+
+ Hint(s):
+ 1. If you did source out your files to slim your config it is mandatory that your paste the source wherever the variables is needed.
+ 2. Remember that (a) the "password" in this case is a variable containing the actual password as input and (b) user defined variables start with ~my_~:
+
+*** Additionals
+If you want to edit your passwords, run
+
+#+begin_src sh
+pass edit /mail/gmail
+#+end_src
+
+**** Stronger Algorithms
+I did some modification according to this [[https://wiki.archlinux.org/index.php/GnuPG#Tips_and_tricks][arch wiki entry]] and use now stronger algorithms with ~gnupg~.
+
+**** git-crypt
+     [[https://github.com/AGWA/git-crypt][git-crypt]] allows to encrypt files while pushing them to github.
+
+** offlineimap
+
+ I like to have all my mails ready on my laptopt. For this reason I use offlineimap. Got again by with a little help from my good old friend -- the [[https://wiki.archlinux.org/index.php/OfflineIMAP][arch wiki]].
+
+ Hint: Before you rock'n'roll just make sure you have (updated) ca-certificates.
+
+ #+begin_src sh
+ pacman -Q ca-certificates
+
+ sudo pacman -Syu offlineimap
+ cp /usr/share/offlineimap/offlineimap.conf ~/.offlineimaprc
+ mkdir ~/mail
+ #+end_src
+
+ Bringing in password management:
+ Set a ~pass~-word and ~touch~ a offlineimap.py. Copy the later from my repo:
+
+ #+begin_src sh
+ pass insert /mail/gmx
+ touch ~/.offlineimap.py
+ #+end_src
+
+ Hint: This is a multi-user file which can be adjusted they way you want.
+
+ Now add the "pythonfilefile" line to the [general] as well the "remotemasseval" line to the [Repository] section to your .offlineimaprc.
+
+ Hint: If your get an "Gmail synchro error" try do delete your maildir. General advice from the [[https://wiki.archlinux.org/index.php/OfflineIMAP][Arch Wiki]] is to remove all of the folder $HOME/.offlineimap after the mapping.
+
+*** systemd integration
+https://babushk.in/posts/offlineimap-systemd.html
+https://wiki.archlinux.org/index.php/OfflineIMAP
+
+To start a daemon which automatically starts offlineimap on login we need a systemd/User service.
+The [[https://wiki.archlinux.org/index.php/OfflineIMAP][Arch Wiki]] comes with general advice [[https://babushk.in/posts/offlineimap-systemd.html][Igor]] with a more specific one. Create all necessary files and folders:
+
+#+begin_src sh
+touch /usr/lib/systemd/user/offlineimap@gmail.service
+touch /usr/lib/systemd/user/offlineimap@gmx.service
+#+end_src
+
+Enable and start the scripts:
+
+++++++++++++++++++++++++++
+Hint: The accessuble scripts are at /usr/lib/systemd/user/
+++++++++++++++++++++++++++
+
+#+begin_src sh
+systemctl daemon-reload
+
+systemctl --user enable offlineimap@gmail.service
+systemctl --user enable offlineimap@gmx.service
+
+systemctl --user start offlineimap@gmail.service
+systemctl --user startofflineimap@gmx.service
+#+end_src
+
+
+** mu4e
+Official [[https://www.djcbsoftware.nl/code/mu/mu4e/index.html][Mu4e Manual]]. No we get our mails with offlineimap. So it's time to index them ("we need to scan the messages in the maildir and store the information about them in a special database" read here). If errors occure run the second command and rerun the first one. Test with the last one:
+
+ #+begin_src sh
+ mu index --maildir=~/Maildir
+ pkill -2 -u $UID mu
+ mu find hello
+ #+end_src
+
+Ah, hold on -- the requirements: ~mu~ package
+
+#+begin_src zsh
+yay -Syu mu
+#+end_src
+
+** Stardict
+
+Read from [[http://jsomers.net/blog/dictionary][James Somers]] that I'm "[\dots] probably using the wrong dictionary".
+Like [[http://mbork.pl/?search=%25222017-01-14+I%2527m+now+using+the+right+dictionary%2522][Marcin Borkowski]] I considered using the right one. Now I use ~stardict~ in
+the command line version called ~sdcv~ with ~Webster 1913~ dictionary. You might
+also think about the gui or [[https://sites.google.com/site/gtonguedict/home/stardict-dictionaries][other language packages]]. Stick with [[http://download.huzheng.org/freedict.de/][freedict]].
+
+Hint: ~sdcv~ is already installed.
+
+#+begin_src
+pacman -Q sdcv
+# sudo pacman -Syu sdcv
+# #sudo pacman -Syu stardict
+#+end_src
+
+As there are no dictionaries out of the box, get some in stardict format and
+extract them to ~/usr/share/stardict/dic~. If it's not there create it.
+
+#+begin_src
+cd Downloads
+wget https://s3.amazonaws.com/jsomers/dictionary.zip
+unzip dictionary.zip
+rm -rf __MACOSX
+tar xjf ./dictionary/stardict-dictd-web1913-2.4.2.tar.bz2
+cp -r  ./dictionary/stardict-dictd-web1913-2.4.2 /usr/share/stardict/dic/
+#+end_src
+
+Add an alias for a smoother workflow:
+
+#+begin_src
+alias define="/usr/bin/sdcv"
+#+end_src
+
+Questions? See the [[https://two-wrongs.com/why-you-should-buy-into-the-emacs-platform][Arch wiki]]
+
+*** Additional: other language packages
+
+German-English and vice versa. Same procedure with ~tar~ and stuff.
+
+#+begin_src
+wget http://downloads.sourceforge.net/xdxf/stardict-comn_sdict05_ger_eng-2.4.2.tar.bz2 &&\\
+wget http://downloads.sourceforge.net/xdxf/stardict-comn_sdict_axm05_English_German-2.4.2.tar.bz2
+#+end_src
+
+** Jekyll (and Ruby)
+Since Jekyll is a Ruby program I need to install Ruby to be able to work with
+Jekyll. Following the [[https://wiki.archlinux.org/index.php/Ruby][Arch Wiki Instructions]] to install Ruby and then get
+Jekyll: (1) Edit my ~.zshrc~ and (2) added ~export PATH="$PATH:$(ruby -e 'puts
+Gem.user_dir')/bin"~ to it. after that I tested it and installed Jekyll via.
+Jekyll should then be on my ~gem list~
+
+#+begin_src
+vi ~/.profile
+sudo pacman -Syu ruby
+gem_env
+gem install jekyll bundler
+gem list
+#+end_src
+** Wordnet Thesaurus
+
+I integrated Wordnet in Emacs to find synonyms. To get it going I installed the
+Wordnet CLI (command line interface) in the ~yay~ section . The rest of the
+configuration takes place in my Emacs configuration file.
+
+** Node.js 
+
+Intall nodejs but also read the section "nvm".
+
+#+begin_src
+pacman -Syu nodejs npm
+#+end_src
+
+** nvm
+
+~nvm~ is a version manager for npm. With it you can have multiple
+versions installed and switch between them.  See
+https://github.com/nvm-sh/nvm. If nvm is not installed install it with
+~curls~ if ~curl~ is installed. On the website there is also a ~wget~
+option. Hint: [[https://nodesource.com/blog/installing-node-js-tutorial-using-nvm-on-mac-os-x-and-ubuntu/][nodscource.com]] is also an option if you need help.
+
+#+begin_src 
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.0/install.sh | bash
+#+end_src
+
+The I was able to run ~nvm~. If its not running look for help at
+nodesource.com. So now you are able to (1) install, (2) use and (3)
+uninstall ~npm~ versions
+
+#+begin_src
+nvm install 12 
+nvm use 12
+nvm uninstall 11
+#+end_src
+
+
+#+begin_src
+nvm install --lts
+nvm use --lts
+#+end_src
+
+Now you can build applications, APIs, tools, and more with Node.js
+
+** Uniread
+
+A speedreading tool for Linux. To be able to install it, you'll need npm and Node.js
+
+#+begin_src
+npm install -g uniread
+#+end_src
+
+** Samba
+
+If you want to connect to the Landau uni-server use the folwing command
+
+#+begin_src
+sudo mount -t cifs //sambaserver.uni-landau.de/home/biss9236 /mnt -o user=biss9236
+#+end_src
