@@ -1,4 +1,5 @@
-/* Edit; ~/.local/share/Anki2/fladrif/collection.media */
+/* On Linux edit: ~/.local/share/Anki2/fladrif/collection.media */
+/* on Mac edit: ~/Library/Application Support/Anki2*/
 /* Note: When displaying your cards, Anki set the media folder as reference,  */
 /* I.e., inclusion of images and stuff requires either an (a) absolute paths */
 /* or a path relative to the media collection folder. +/
@@ -62,6 +63,9 @@
 .nightMode .type,
 .nightMode .placeholder {
   color: #ccc;
+}
+.nightMode img[src$=".png"] {
+    filter: invert(1);
 }
 
 hr {
